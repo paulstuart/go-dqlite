@@ -43,6 +43,14 @@ func WithLogFunc(log LogFunc) Option {
 	}
 }
 
+// setup provides initialized
+func setup(req, resp int) (protocol.Message, protocol.Message) {
+	var request, response protocol.Message
+	request.Init(req)
+	response.Init(resp)
+	return request, response
+}
+
 // New creates a new client connected to the dqlite node with the given
 // address.
 func New(ctx context.Context, address string, options ...Option) (*Client, error) {
@@ -79,11 +87,7 @@ func New(ctx context.Context, address string, options ...Option) (*Client, error
 
 // Leader returns information about the current leader, if any.
 func (c *Client) Leader(ctx context.Context) (*NodeInfo, error) {
-	request := protocol.Message{}
-	request.Init(16)
-	response := protocol.Message{}
-	response.Init(512)
-
+	request, response := setup(16, 512)
 	protocol.EncodeLeader(&request)
 
 	if err := c.protocol.Call(ctx, &request, &response); err != nil {
@@ -102,11 +106,7 @@ func (c *Client) Leader(ctx context.Context) (*NodeInfo, error) {
 
 // Cluster returns information about all nodes in the cluster.
 func (c *Client) Cluster(ctx context.Context) ([]NodeInfo, error) {
-	request := protocol.Message{}
-	request.Init(16)
-	response := protocol.Message{}
-	response.Init(512)
-
+	request, response := setup(16, 512)
 	protocol.EncodeCluster(&request)
 
 	if err := c.protocol.Call(ctx, &request, &response); err != nil {
@@ -132,11 +132,7 @@ type File struct {
 // the database), the second is the WAL file (which has the same name as the
 // database plus the suffix "-wal").
 func (c *Client) Dump(ctx context.Context, dbname string) ([]File, error) {
-	request := protocol.Message{}
-	request.Init(16)
-	response := protocol.Message{}
-	response.Init(512)
-
+	request, response := setup(16, 512)
 	protocol.EncodeDump(&request, dbname)
 
 	if err := c.protocol.Call(ctx, &request, &response); err != nil {
@@ -164,11 +160,7 @@ func (c *Client) Dump(ctx context.Context, dbname string) ([]File, error) {
 
 // Add a node to a cluster.
 func (c *Client) Add(ctx context.Context, node NodeInfo) error {
-	request := protocol.Message{}
-	request.Init(4096)
-	response := protocol.Message{}
-	response.Init(4096)
-
+	request, response := setup(4096, 4096)
 	protocol.EncodeJoin(&request, node.ID, node.Address)
 
 	if err := c.protocol.Call(ctx, &request, &response); err != nil {
@@ -186,11 +178,7 @@ func (c *Client) Add(ctx context.Context, node NodeInfo) error {
 
 // Remove a node from the cluster.
 func (c *Client) Remove(ctx context.Context, id uint64) error {
-	request := protocol.Message{}
-	request.Init(4096)
-	response := protocol.Message{}
-	response.Init(4096)
-
+	request, response := setup(4096, 4096)
 	protocol.EncodeRemove(&request, id)
 
 	if err := c.protocol.Call(ctx, &request, &response); err != nil {
